@@ -1,0 +1,1 @@
+his project implements a smart lighting system where pressing a button turns on the porch light (external LED) for 30 seconds and the hallway light (built-in LED) for 60 seconds. The code uses a modular approach with reusable functions for improved readability and scalability.
