@@ -1,0 +1,38 @@
+const int buttonPin = 2;
+const int porchLightPin = 5;
+const int porchDuration = 30000;  // 30s
+const int hallwayDuration = 60000; // 60s
+
+bool buttonPressed = false;
+
+void setup() {
+  pinMode(buttonPin, INPUT);
+  pinMode(porchLightPin, OUTPUT);
+  pinMode(LED_BUILTIN, OUTPUT);  // built-in LED
+  Serial.begin(9600);
+}
+
+void loop() {
+  checkButton();
+  if(buttonPressed) {
+    activateLights();
+    buttonPressed = false;
+  }
+}
+
+void checkButton() {
+  if(digitalRead(buttonPin) == HIGH) {
+    buttonPressed = true;
+  }
+}
+
+void activateLights() {
+  turnOnLight(porchLightPin, porchDuration);
+  turnOnLight(LED_BUILTIN, hallwayDuration);  // built-in LED
+}
+
+void turnOnLight(int lightPin, int duration) {
+  digitalWrite(lightPin, HIGH);
+  delay(duration);
+  digitalWrite(lightPin, LOW);
+}
