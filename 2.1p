@@ -1,0 +1,101 @@
+
+#include <SPI.h>
+#include <WiFiNINA.h>
+#include "ThingSpeak.h"
+
+// ---------------- WIFI ----------------
+const char *ssid = "atharv";
+const char *password = "18200618";
+
+// ---------------- THINGSPEAK ----------------
+unsigned long channelNumber = 3325274;
+const char *writeAPIKey = "AT1QW1HVG1JWCX5Q";
+
+// ---------------- SENSOR ----------------
+#define LIGHT_PIN A0
+
+WiFiClient client;
+
+// ---------------- FUNCTION DECLARATIONS ----------------
+void connectToWiFi();
+float generateTemperature();
+int readLight();
+void sendToThingSpeak(float temp, int light);
+
+void setup()
+{
+  Serial.begin(9600);
+  while (!Serial);
+
+  ThingSpeak.begin(client);
+  connectToWiFi();
+
+  randomSeed(analogRead(A1));
+}
+
+void loop()
+{
+  if (WiFi.status() != WL_CONNECTED)
+  {
+    connectToWiFi();
+  }
+
+  float temperature = generateTemperature();
+  int lightLevel = readLight();
+
+  Serial.print("Temperature: ");
+  Serial.print(temperature);
+  Serial.println(" C");
+
+  Serial.print("Light: ");
+  Serial.println(lightLevel);
+
+  sendToThingSpeak(temperature, lightLevel);
+
+  delay(30000); // send every 30 sec
+}
+
+// ---------------- FUNCTIONS ----------------
+
+void connectToWiFi()
+{
+  Serial.print("Connecting to WiFi");
+
+  while (WiFi.status() != WL_CONNECTED)
+  {
+    WiFi.begin(ssid, password);
+    delay(5000);
+    Serial.print(".");
+  }
+
+  Serial.println("\nWiFi connected");
+}
+
+float generateTemperature()
+{
+  int temp = random(200, 350); // 20.0 to 35.0
+  return temp / 10.0;
+}
+
+int readLight()
+{
+  return analogRead(LIGHT_PIN);
+}
+
+void sendToThingSpeak(float temp, int light)
+{
+  ThingSpeak.setField(1, temp);
+  ThingSpeak.setField(2, light);
+
+  int response = ThingSpeak.writeFields(channelNumber, writeAPIKey);
+
+  if (response == 200)
+  {
+    Serial.println("Data sent successfully\n");
+  }
+  else
+  {
+    Serial.print("Error code: ");
+    Serial.println(response);
+  }
+}
