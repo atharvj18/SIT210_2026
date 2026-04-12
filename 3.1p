@@ -1,0 +1,106 @@
+#include <SPI.h>
+#include <WiFiNINA.h>
+
+// ---------------- WIFI ----------------
+const char* ssid = "atharv";
+const char* password = "18200618";
+
+// ---------------- IFTTT ----------------
+const char* host = "maker.ifttt.com";
+String iftttKey = "CEm_eMzrLsUHhJ7grJ1jK";
+
+// ---------------- SENSOR ----------------
+#define LIGHT_PIN A0
+
+int threshold = 450;     
+bool sunlightOn = false;
+
+WiFiClient client;
+
+// ---------------- FUNCTIONS ----------------
+void connectToWiFi();
+int readLightLevel();
+void sendIFTTTEvent(String eventName);
+
+void setup()
+{
+  Serial.begin(9600);
+  while (!Serial);
+
+  connectToWiFi();
+}
+
+void loop()
+{
+  int lightValue = readLightLevel();
+
+  Serial.print("Light Value: ");
+  Serial.println(lightValue);
+
+  //  Sunlight detected
+  if (lightValue > threshold && sunlightOn == false)
+  {
+    sendIFTTTEvent("sunlight_detected");
+    sunlightOn = true;
+    Serial.println("Sunlight detected notification sent.");
+  }
+
+  // Sunlight stopped
+  if (lightValue <= threshold && sunlightOn == true)
+  {
+    sendIFTTTEvent("sunlight_stopped");
+    sunlightOn = false;
+    Serial.println("Sunlight stopped notification sent.");
+  }
+
+  delay(3000);
+}
+
+// ---------------- FUNCTIONS ----------------
+
+void connectToWiFi()
+{
+  Serial.print("Connecting to WiFi");
+
+  while (WiFi.status() != WL_CONNECTED)
+  {
+    WiFi.begin(ssid, password);
+    delay(5000);
+    Serial.print(".");
+  }
+
+  Serial.println();
+  Serial.println("WiFi connected");
+}
+
+int readLightLevel()
+{
+  return analogRead(LIGHT_PIN);
+}
+
+void sendIFTTTEvent(String eventName)
+{
+  if (client.connect(host, 80))
+  {
+    String url = "/trigger/" + eventName + "/with/key/" + iftttKey;
+
+    client.println("GET " + url + " HTTP/1.1");
+    client.println("Host: maker.ifttt.com");
+    client.println("Connection: close");
+    client.println();
+
+    delay(1000);
+
+    while (client.available())
+    {
+      char c = client.read();
+      Serial.write(c);
+    }
+
+    client.stop();
+  }
+  else
+  {
+    Serial.println("Connection to IFTTT failed.");
+  }
+}
